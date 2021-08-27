@@ -63,7 +63,7 @@ exports.animeDetail=async(req,res)=>{
         animeInfo["episodes"]=episodeList
         return animeInfo
     })
-
+    await browser.close();
     res.json(allDetail)
 }
 
@@ -77,5 +77,7 @@ exports.playEpisode=async(req,res)=>{
         let vidUrl=document.getElementsByTagName("iframe")[1].src
         return vidUrl
     })
+
+    await browser.close();
     res.json({episodeUrl:vidURL})
 }

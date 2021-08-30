@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 const BASE_URL=`https://gogoanime.pe/`
 
 exports.recentRelease=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(BASE_URL);
 

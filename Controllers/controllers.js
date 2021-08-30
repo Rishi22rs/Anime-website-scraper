@@ -25,7 +25,7 @@ exports.recentRelease=async(req,res)=>{
 }
 
 exports.newSeason=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(`${BASE_URL}/new-season.html`);
 
@@ -47,7 +47,7 @@ exports.newSeason=async(req,res)=>{
 }
 
 exports.movies=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(`${BASE_URL}/anime-movies.html`);
 
@@ -69,7 +69,7 @@ exports.movies=async(req,res)=>{
 }
 
 exports.popular=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(`${BASE_URL}/popular.html`);
 
@@ -91,7 +91,7 @@ exports.popular=async(req,res)=>{
 }
 
 exports.genre=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     const genre=req.body.genre
 
@@ -115,7 +115,7 @@ exports.genre=async(req,res)=>{
 }
 
 exports.searchAnime=async(req,res)=>{
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(BASE_URL);
     let keyword=req.body.keyword
@@ -148,7 +148,7 @@ exports.searchAnime=async(req,res)=>{
 exports.animeDetail=async(req,res)=>{
     const animeLink=req.body.animeLink
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(animeLink);
 
@@ -183,7 +183,7 @@ exports.animeDetail=async(req,res)=>{
 
 exports.playEpisode=async(req,res)=>{
     const episodeLink=req.body.episodeLink
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(episodeLink);
 

@@ -3,7 +3,7 @@ const router = require('./Routes/route')
 const bodyParser = require("body-parser");
 const cors=require('cors')
 const app = express()
-const port = 6699
+const port = process.env.PORT || 6699
 
 app.get('/', (req, res) => {
   res.send('i am runnin')

@@ -5,12 +5,12 @@ const cors=require('cors')
 const app = express()
 const port = process.env.PORT || 6699
 
+app.use(cors())
+app.use(bodyParser());
+
 app.get('/', (req, res) => {
   res.send('i am runnin')
 })
-
-app.use(cors())
-app.use(bodyParser());
 app.use('/api',router)
 
 app.listen(port, () => {

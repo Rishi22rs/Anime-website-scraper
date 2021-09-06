@@ -147,7 +147,6 @@ exports.searchAnime=async(req,res)=>{
 
 exports.animeDetail=async(req,res)=>{
     const animeLink=req.body.animeLink
-
     const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(animeLink);
@@ -179,6 +178,21 @@ exports.animeDetail=async(req,res)=>{
     })
     await browser.close();
     res.json(allDetail)
+}
+
+exports.webPlayEpisode=async(req,res)=>{
+    const episodeLink=req.body.episodeLink
+    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
+    const page = await browser.newPage();
+    await page.goto(episodeLink);
+
+    let vidURL=await page.evaluate(()=>{
+        let animeLink=document.getElementsByClassName("anime-info")[0].children[1].href
+        let vidUrl=document.getElementsByTagName("iframe")[1].src
+        return {animeLink,episodeUrl:vidUrl}
+    })
+
+    res.json(vidURL)
 }
 
 exports.playEpisode=async(req,res)=>{

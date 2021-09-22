@@ -141,6 +141,7 @@ exports.searchAnime=async(req,res)=>{
         }
         return searchList
     })
+    page.click(`document.querySelectorAll('ul[id="episode_page"]>li>a')[0]`)
     await browser.close();
     res.json(searchedList)
 }
@@ -166,16 +167,34 @@ exports.animeDetail=async(req,res)=>{
         for(let i=0;i<details.length;i++){
             animeInfo[details[i].children[0].innerHTML.trim().slice(0,-1)]=i==2?details[i].innerText.replace('Genre: ',''):details[i].children[1]!==undefined?details[i].children[1].innerHTML:details[i].innerText.includes('Plot Summary: ')?details[i].innerText.replace('Plot Summary: ',''):details[i].innerText.replace('Other name: ','')
         }
-        let episodeList=[]
-        if(eplist!==null){
+
+        const ele=document.querySelectorAll('ul[id="episode_page"]>li>a')[0]
+        ele.click()
+        // animeInfo["episodes"]=episodeList
+        return animeInfo
+    })
+    
+    let pageCount=await page.evaluate(()=>{
+        const ele=document.querySelectorAll('ul[id="episode_page"]>li>a').length
+        return ele
+    })
+
+    let episodes=[]
+
+    for(let p=1;p<=pageCount;p++){
+        let de=await page.evaluate((p,pageCount)=>{
+            let episodeList=[]
+            const ele=document.querySelectorAll('ul[id="episode_page"]>li>a')
+            const eplist=document.getElementById("episode_related")
             for(let i=0;i<eplist.children.length;i++){
                 episodeList.push(eplist.children[i].children[0].href)
             }
-        }
-        
-        animeInfo["episodes"]=episodeList
-        return animeInfo
-    })
+            p<pageCount&&ele[p].click()
+            return episodeList
+        },p,pageCount)
+        episodes.push(...de.reverse())
+    }
+    allDetail["episodes"]=episodes.reverse()
     await browser.close();
     res.json(allDetail)
 }

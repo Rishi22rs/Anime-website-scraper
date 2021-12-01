@@ -1,8 +1,12 @@
 const puppeteer = require("puppeteer");
+const Redis=require("ioredis")
 
+const redis = new Redis();
+
+const DEFAULT_EXPIRATION=3600
 const BASE_URL=`https://gogoanime.pe/`
 
-exports.recentRelease=async(req,res)=>{
+exports.getFrontPageData=async(req,res)=>{
     const browser = await puppeteer.launch({args: ["--no-sandbox"]});
     const page = await browser.newPage();
     await page.goto(BASE_URL);
@@ -20,74 +24,185 @@ exports.recentRelease=async(req,res)=>{
         }
         return data
     })
-    await browser.close();
-    res.json(recentReleaseData)
+
+    Promise.all([
+        await page.goto(`${BASE_URL}/new-season.html`),
+        page.waitForNavigation()
+    ])    
+
+    let newSeasonData=await page.evaluate(()=>{
+        const epsData=document.getElementsByClassName("items")[0].children
+        const data=[]
+        for(let i=0;i<epsData.length;i++){
+            data.push({
+                banner:epsData[i].children[0].children[0].children[0].src,
+                name:epsData[i].children[1].innerText,
+                releaseDate:epsData[i].children[2].innerText,
+                animeEpLink:epsData[i].children[0].children[0].href
+            })
+        }
+        return data
+    })
+
+    Promise.all([
+        await page.goto(`${BASE_URL}/anime-movies.html`),
+        page.waitForNavigation()
+    ])  
+
+    let moviesData=await page.evaluate(()=>{
+        const epsData=document.getElementsByClassName("items")[0].children
+        const data=[]
+        for(let i=0;i<epsData.length;i++){
+            data.push({
+                banner:epsData[i].children[0].children[0].children[0].src,
+                name:epsData[i].children[1].innerText,
+                releaseDate:epsData[i].children[2].innerText,
+                animeEpLink:epsData[i].children[0].children[0].href
+            })
+        }
+        return data
+    })
+
+    Promise.all([
+        await page.goto(`${BASE_URL}/popular.html`),
+        page.waitForNavigation()
+    ]) 
+
+    let popularData=await page.evaluate(()=>{
+        const epsData=document.getElementsByClassName("items")[0].children
+        const data=[]
+        for(let i=0;i<epsData.length;i++){
+            data.push({
+                banner:epsData[i].children[0].children[0].children[0].src,
+                name:epsData[i].children[1].innerText,
+                releaseDate:epsData[i].children[2].innerText,
+                animeEpLink:epsData[i].children[0].children[0].href
+            })
+        }
+        return data
+    })
+
+    const combinedData={recentReleaseData,newSeasonData,moviesData,popularData}
+
+    await browser.close(combinedData);
+    res.json()
+}
+
+exports.recentRelease=async(req,res)=>{
+    redis.get("recentRelease",async(err,recentReleaseData)=>{
+        if(err) console.error(err)
+        if(recentReleaseData!=null){
+            return res.json(JSON.parse(recentReleaseData))
+        }else{
+            const browser = await puppeteer.launch({args: ["--no-sandbox"]});
+            const page = await browser.newPage();
+            await page.goto(BASE_URL);
+
+            let recentReleaseData=await page.evaluate(()=>{
+                const epsData=document.getElementsByClassName("items")[0].children
+                const data=[]
+                for(let i=0;i<epsData.length;i++){
+                    data.push({
+                        banner:epsData[i].children[0].children[0].children[0].src,
+                        name:epsData[i].children[1].innerText,
+                        releaseDate:epsData[i].children[2].innerText,
+                        animeEpLink:epsData[i].children[0].children[0].href
+                    })
+                }
+                return data
+            })
+            await browser.close();
+            redis.setex("recentRelease",DEFAULT_EXPIRATION,JSON.stringify(recentReleaseData))
+            res.json(recentReleaseData)
+        }
+    })
 }
 
 exports.newSeason=async(req,res)=>{
-    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
-    const page = await browser.newPage();
-    await page.goto(`${BASE_URL}/new-season.html`);
+    redis.get("newSeason",async(err,newSeasonData)=>{
+        if(err)console.error(err)
+        if(newSeasonData!=null){
+            return res.json(JSON.parse(newSeasonData))
+        }else{
+            const browser = await puppeteer.launch({args: ["--no-sandbox"]});
+            const page = await browser.newPage();
+            await page.goto(`${BASE_URL}/new-season.html`);
 
-    let recentReleaseData=await page.evaluate(()=>{
-        const epsData=document.getElementsByClassName("items")[0].children
-        const data=[]
-        for(let i=0;i<epsData.length;i++){
-            data.push({
-                banner:epsData[i].children[0].children[0].children[0].src,
-                name:epsData[i].children[1].innerText,
-                releaseDate:epsData[i].children[2].innerText,
-                animeEpLink:epsData[i].children[0].children[0].href
+            let recentReleaseData=await page.evaluate(()=>{
+                const epsData=document.getElementsByClassName("items")[0].children
+                const data=[]
+                for(let i=0;i<epsData.length;i++){
+                    data.push({
+                        banner:epsData[i].children[0].children[0].children[0].src,
+                        name:epsData[i].children[1].innerText,
+                        releaseDate:epsData[i].children[2].innerText,
+                        animeEpLink:epsData[i].children[0].children[0].href
+                    })
+                }
+                return data
             })
+            await browser.close();
+            res.json(recentReleaseData)
         }
-        return data
     })
-    await browser.close();
-    res.json(recentReleaseData)
 }
 
 exports.movies=async(req,res)=>{
-    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
-    const page = await browser.newPage();
-    await page.goto(`${BASE_URL}/anime-movies.html`);
+    redis.get("movies",async(err,moviesData)=>{
+        if(err)console.error(err)
+        if(moviesData!=null){
+            return res.json(JSON.parse(moviesData))
+        }else{
+            const browser = await puppeteer.launch({args: ["--no-sandbox"]});
+            const page = await browser.newPage();
+            await page.goto(`${BASE_URL}/anime-movies.html`);
 
-    let recentReleaseData=await page.evaluate(()=>{
-        const epsData=document.getElementsByClassName("items")[0].children
-        const data=[]
-        for(let i=0;i<epsData.length;i++){
-            data.push({
-                banner:epsData[i].children[0].children[0].children[0].src,
-                name:epsData[i].children[1].innerText,
-                releaseDate:epsData[i].children[2].innerText,
-                animeEpLink:epsData[i].children[0].children[0].href
+            let recentReleaseData=await page.evaluate(()=>{
+                const epsData=document.getElementsByClassName("items")[0].children
+                const data=[]
+                for(let i=0;i<epsData.length;i++){
+                    data.push({
+                        banner:epsData[i].children[0].children[0].children[0].src,
+                        name:epsData[i].children[1].innerText,
+                        releaseDate:epsData[i].children[2].innerText,
+                        animeEpLink:epsData[i].children[0].children[0].href
+                    })
+                }
+                return data
             })
+            await browser.close();
+            res.json(recentReleaseData)
         }
-        return data
     })
-    await browser.close();
-    res.json(recentReleaseData)
 }
 
 exports.popular=async(req,res)=>{
-    const browser = await puppeteer.launch({args: ["--no-sandbox"]});
-    const page = await browser.newPage();
-    await page.goto(`${BASE_URL}/popular.html`);
+    redis.get("popular",async(err,popularData)=>{
+        if(err)console.error(err)
+        if(popularData!=null){
+            return res.json(JSON.parse(popularData))
+        }else{
+            const browser = await puppeteer.launch({args: ["--no-sandbox"]});
+            const page = await browser.newPage();
+            await page.goto(`${BASE_URL}/popular.html`);
 
-    let recentReleaseData=await page.evaluate(()=>{
-        const epsData=document.getElementsByClassName("items")[0].children
-        const data=[]
-        for(let i=0;i<epsData.length;i++){
-            data.push({
-                banner:epsData[i].children[0].children[0].children[0].src,
-                name:epsData[i].children[1].innerText,
-                releaseDate:epsData[i].children[2].innerText,
-                animeEpLink:epsData[i].children[0].children[0].href
+            let recentReleaseData=await page.evaluate(()=>{
+                const epsData=document.getElementsByClassName("items")[0].children
+                const data=[]
+                for(let i=0;i<epsData.length;i++){
+                    data.push({
+                        banner:epsData[i].children[0].children[0].children[0].src,
+                        name:epsData[i].children[1].innerText,
+                        releaseDate:epsData[i].children[2].innerText,
+                        animeEpLink:epsData[i].children[0].children[0].href
+                    })
+                }
+                return data
             })
+            await browser.close();
+            res.json(recentReleaseData)
         }
-        return data
     })
-    await browser.close();
-    res.json(recentReleaseData)
 }
 
 exports.genre=async(req,res)=>{
@@ -126,20 +241,25 @@ exports.searchAnime=async(req,res)=>{
         page.click(".btngui")
     ])
     let searchedList=await page.evaluate(()=>{
-        let names=document.querySelectorAll('p[class="name"] > a')
-        let banner=document.querySelectorAll('div[class="img"]>a>img')
-        let releases=document.querySelectorAll('p[class="released"]')
-        let animeLink=document.querySelectorAll('div[class="img"]>a')
-        let searchList=[]
-        for(let i=0;i<names.length;i++){
-            searchList.push({
-                name:names[i].innerHTML,
-                banner:banner[i].src,
-                releaseDate:releases[i].innerText,
-                animeLink:animeLink[i].href
-            })
-        }
-        return searchList
+        // try{
+            let names=document.querySelectorAll('p[class="name"] > a')
+            let banner=document.querySelectorAll('div[class="img"]>a>img')
+            let releases=document.querySelectorAll('p[class="released"]')
+            let animeLink=document.querySelectorAll('div[class="img"]>a')
+            let searchList=[]
+            for(let i=0;i<names.length;i++){
+                searchList.push({
+                    name:names[i].innerHTML,
+                    banner:banner[i].src,
+                    releaseDate:releases[i].innerText,
+                    animeLink:animeLink[i].href
+                })
+            }
+            return searchList
+        // }
+        // catch(err){
+        //     console.log(err.message)
+        // }
     })
     page.click(`document.querySelectorAll('ul[id="episode_page"]>li>a')[0]`)
     await browser.close();
@@ -210,7 +330,7 @@ exports.webPlayEpisode=async(req,res)=>{
         let vidUrl=document.getElementsByTagName("iframe")[1].src
         return {animeLink,episodeUrl:vidUrl}
     })
-
+    await browser.close();
     res.json(vidURL)
 }
 

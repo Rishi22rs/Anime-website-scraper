@@ -1,7 +1,9 @@
 const puppeteer = require("puppeteer");
 const Redis=require("ioredis")
 
-const redis = new Redis();
+const port = process.env.PORT || 6379
+
+const redis = new Redis(port, "https://bestanimeapp.herokuapp.com");
 
 const DEFAULT_EXPIRATION=3600
 const BASE_URL=`https://gogoanime.pe/`

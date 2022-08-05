@@ -1,3 +1,3 @@
 # Anime-website-scraper
 
-Back-end for Anime enpai app
+Back-end for Anime Senpai app.
